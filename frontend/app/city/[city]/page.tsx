@@ -52,17 +52,37 @@ export default function CityProjectsPage() {
   const [selectedPrice, setSelectedPrice] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('bookingHigh');
+  const [allLocalities, setAllLocalities] = useState<string[]>([]);
 
   // View options
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'map'>('grid');
 
   useEffect(() => {
     fetchCityData(1);
+    // Fetch all localities for this city
+    // Capitalize first letter of city name for API
+    const capitalizedCity = cityName.charAt(0).toUpperCase() + cityName.slice(1);
+    fetch(`http://localhost:5001/api/scraper/localities?city=${capitalizedCity}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setAllLocalities(data.data.localities.map((loc: any) => loc.name));
+        } else {
+          // Fallback to hardcoded localities if API fails
+          setAllLocalities(getLocalitiesForCity(capitalizedCity));
+        }
+      })
+      .catch(err => {
+        console.error('Error fetching localities:', err);
+        // Fallback to hardcoded localities
+        setAllLocalities(getLocalitiesForCity(capitalizedCity));
+      });
   }, [cityName]);
 
   useEffect(() => {
-    applyFilters();
-  }, [selectedLocality, selectedType, selectedBooking, selectedPrice, searchQuery, sortBy, projects]);
+    // When filters change, fetch data from backend with filters
+    fetchCityData(1);
+  }, [selectedLocality, selectedType, selectedBooking, selectedPrice, searchQuery, sortBy]);
 
   const handlePageChange = (page: number) => {
     fetchCityData(page);
@@ -72,8 +92,26 @@ export default function CityProjectsPage() {
   const fetchCityData = async (page: number = 1) => {
     try {
       setLoading(true);
-      // Fetch projects with pagination
-      const response = await fetch(`http://localhost:5001/api/scraper/projects?city=${cityName}&page=${page}&limit=50`);
+      // Capitalize first letter of city name for API
+      const capitalizedCity = cityName.charAt(0).toUpperCase() + cityName.slice(1);
+      
+      // Build query params with filters
+      const params = new URLSearchParams({
+        city: capitalizedCity,
+        page: page.toString(),
+        limit: '50'
+      });
+      
+      // Add filters to API call
+      if (selectedLocality !== 'all') {
+        params.append('locality', selectedLocality);
+      }
+      if (searchQuery) {
+        params.append('search', searchQuery);
+      }
+      
+      // Fetch projects with pagination and filters
+      const response = await fetch(`http://localhost:5001/api/scraper/projects?${params}`);
       const result = await response.json();
       
       if (result.success) {
@@ -81,7 +119,7 @@ export default function CityProjectsPage() {
           projectName: project.projectName,
           promoterName: project.promoterName,
           projectType: project.projectType,
-          locality: getRandomLocality(cityName),
+          locality: project.locality || getRandomLocality(capitalizedCity),
           reraId: project.reraId,
           approvedOn: project.approvedOn,
           bookingPercentage: project.bookingPercentage,
@@ -117,6 +155,7 @@ export default function CityProjectsPage() {
         }
 
         setProjects(apiProjects);
+        // No need to set filteredProjects separately - projects are already filtered by backend
         setFilteredProjects(apiProjects);
       }
     } catch (error) {
@@ -180,65 +219,10 @@ export default function CityProjectsPage() {
       'Rajkot': ['Kalawad Road', 'University Road', 'Raiya Road', 'Kothariya', 'Nana Mava', 'Madhapar', 'Mavdi', 'Gondal Road', 'Aji Dam', 'Sadhu Vaswani'],
       'Gandhinagar': ['Sector 1', 'Sector 7', 'Sector 21', 'Kudasan', 'Sargasan', 'Raysan', 'Urjanagar', 'Infocity', 'GIFT City', 'Randesan']
     };
-    return localityMap[cityName] || ['Area 1', 'Area 2', 'Area 3', 'Area 4', 'Area 5'];
+    return localityMap[city] || ['Area 1', 'Area 2', 'Area 3', 'Area 4', 'Area 5'];
   };
 
-  const applyFilters = () => {
-    let filtered = [...projects];
-
-    // Apply locality filter
-    if (selectedLocality !== 'all') {
-      filtered = filtered.filter(p => p.locality === selectedLocality);
-    }
-
-    // Apply type filter
-    if (selectedType !== 'all') {
-      filtered = filtered.filter(p => p.projectType === selectedType);
-    }
-
-    // Apply booking filter
-    if (selectedBooking !== 'all') {
-      const [min, max] = selectedBooking.split('-').map(Number);
-      filtered = filtered.filter(p => p.bookingPercentage >= min && p.bookingPercentage <= max);
-    }
-
-    // Apply price filter
-    if (selectedPrice !== 'all') {
-      filtered = filtered.filter(p => p.priceRange === selectedPrice);
-    }
-
-    // Apply search
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(p => 
-        p.projectName.toLowerCase().includes(query) ||
-        p.promoterName.toLowerCase().includes(query) ||
-        p.locality.toLowerCase().includes(query)
-      );
-    }
-
-    // Apply sorting
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case 'bookingHigh':
-          return b.bookingPercentage - a.bookingPercentage;
-        case 'bookingLow':
-          return a.bookingPercentage - b.bookingPercentage;
-        case 'unitsHigh':
-          return b.totalUnits - a.totalUnits;
-        case 'unitsLow':
-          return a.totalUnits - b.totalUnits;
-        case 'nameAZ':
-          return a.projectName.localeCompare(b.projectName);
-        case 'nameZA':
-          return b.projectName.localeCompare(a.projectName);
-        default:
-          return 0;
-      }
-    });
-
-    setFilteredProjects(filtered);
-  };
+  // Filtering is now done server-side via API
 
   if (loading) {
     return (
@@ -323,7 +307,7 @@ export default function CityProjectsPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="all">All Localities</option>
-                  {cityStats?.topLocalities.map(locality => (
+                  {allLocalities.map(locality => (
                     <option key={locality} value={locality}>{locality}</option>
                   ))}
                 </select>

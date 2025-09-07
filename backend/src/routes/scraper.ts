@@ -359,19 +359,168 @@ const generateAllProjects = (): any[] => {
     'Vapi': 150
   };
 
-  // City-wise pincode mappings based on real Gujarat pincodes
-  const cityPincodes: Record<string, string[]> = {
-    'Ahmedabad': ['380001', '380002', '380003', '380004', '380005', '380006', '380007', '380008', '380009', '380013', '380015', '380016', '380018', '380019', '380021', '380022', '380024', '380026', '380027', '380028', '380051', '380052', '380053', '380054', '380055', '380061', '380063'],
-    'Surat': ['395001', '395002', '395003', '395004', '395005', '395006', '395007', '395008', '395009', '395010', '395017', '394101', '394107', '394210', '394220', '394221', '394230', '394248', '394327'],
-    'Vadodara': ['390001', '390002', '390003', '390004', '390005', '390006', '390007', '390008', '390009', '390010', '390011', '390012', '390013', '390015', '390016', '390017', '390018', '390019', '390020', '390021', '390022'],
-    'Rajkot': ['360001', '360002', '360003', '360004', '360005', '360006', '360007', '360110', '360311', '360370', '360410', '360490', '360510', '360575'],
-    'Gandhinagar': ['382007', '382009', '382010', '382011', '382012', '382013', '382014', '382015', '382016', '382017', '382018', '382019', '382020', '382021', '382022', '382023', '382024', '382025', '382026', '382027', '382028', '382029', '382421', '382422', '382423', '382424', '382425', '382426', '382427', '382428', '382721'],
-    'Bhavnagar': ['364001', '364002', '364003', '364004', '364005', '364290', '364310', '364505', '364710', '364750'],
-    'Jamnagar': ['361001', '361002', '361003', '361004', '361005', '361006', '361008', '361009', '361010', '361011', '361012'],
-    'Junagadh': ['362001', '362002', '362003', '362004', '362005', '362015', '362220', '362225', '362226', '362227'],
-    'Anand': ['388001', '388002', '388120', '388180', '388220', '388230', '388235', '388260', '388270', '388305'],
-    'Vapi': ['396191', '396193', '396195', '396230', '396235', '396415', '396424', '396450', '396465', '396590']
+  // City-wise locality mappings with pincodes
+  interface Locality {
+    name: string;
+    pincode: string;
+  }
+  
+  const cityLocalities: Record<string, Locality[]> = {
+    'Gandhinagar': [
+      { name: 'Sector 1', pincode: '382007' },
+      { name: 'Sector 2', pincode: '382007' },
+      { name: 'Sector 3', pincode: '382009' },
+      { name: 'Sector 4', pincode: '382009' },
+      { name: 'Sector 5', pincode: '382010' },
+      { name: 'Sector 6', pincode: '382010' },
+      { name: 'Sector 7', pincode: '382011' },
+      { name: 'Sector 11', pincode: '382011' },
+      { name: 'Sector 12', pincode: '382012' },
+      { name: 'Sector 13', pincode: '382013' },
+      { name: 'Sector 14', pincode: '382014' },
+      { name: 'Sector 15', pincode: '382015' },
+      { name: 'Sector 16', pincode: '382016' },
+      { name: 'Sector 21', pincode: '382021' },
+      { name: 'Sector 22', pincode: '382022' },
+      { name: 'Sector 23', pincode: '382023' },
+      { name: 'Sector 24', pincode: '382024' },
+      { name: 'Sector 25', pincode: '382025' },
+      { name: 'Sector 26', pincode: '382026' },
+      { name: 'Sector 27', pincode: '382027' },
+      { name: 'Sector 28', pincode: '382028' },
+      { name: 'Sector 29', pincode: '382029' },
+      { name: 'Kudasan', pincode: '382421' },
+      { name: 'Sargasan', pincode: '382423' },
+      { name: 'GIFT City', pincode: '382355' },
+      { name: 'Randesan', pincode: '382424' },
+      { name: 'Raysan', pincode: '382425' },
+      { name: 'Pethapur', pincode: '382426' },
+      { name: 'Shahpur', pincode: '382427' },
+      { name: 'Vavol', pincode: '382428' },
+      { name: 'Chiloda', pincode: '382721' }
+    ],
+    'Ahmedabad': [
+      { name: 'Kalupur', pincode: '380001' },
+      { name: 'Dariyapur', pincode: '380001' },
+      { name: 'Shahpur', pincode: '380001' },
+      { name: 'Khadia', pincode: '380002' },
+      { name: 'Kankaria', pincode: '380002' },
+      { name: 'Raikhad', pincode: '380003' },
+      { name: 'Manek Chowk', pincode: '380003' },
+      { name: 'Shahibaug', pincode: '380004' },
+      { name: 'Saraspur', pincode: '380005' },
+      { name: 'Paldi', pincode: '380006' },
+      { name: 'Navrangpura', pincode: '380009' },
+      { name: 'Naranpura', pincode: '380013' },
+      { name: 'Satellite', pincode: '380015' },
+      { name: 'Ashram Road', pincode: '380019' },
+      { name: 'Maninagar', pincode: '380022' },
+      { name: 'Vastrapur', pincode: '380026' },
+      { name: 'Thaltej', pincode: '380054' },
+      { name: 'Prahlad Nagar', pincode: '380051' },
+      { name: 'Bodakdev', pincode: '380054' },
+      { name: 'SG Highway', pincode: '380054' },
+      { name: 'Gota', pincode: '382481' },
+      { name: 'Chandkheda', pincode: '382470' },
+      { name: 'Motera', pincode: '380005' },
+      { name: 'Sabarmati', pincode: '380018' },
+      { name: 'Bopal', pincode: '380058' },
+      { name: 'Shela', pincode: '380058' },
+      { name: 'South Bopal', pincode: '380058' }
+    ],
+    'Surat': [
+      { name: 'Nanpura', pincode: '395001' },
+      { name: 'Athwalines', pincode: '395001' },
+      { name: 'Ghod Dod Road', pincode: '395001' },
+      { name: 'Ring Road', pincode: '395002' },
+      { name: 'Udhna', pincode: '395002' },
+      { name: 'Majura Gate', pincode: '395003' },
+      { name: 'Varachha', pincode: '395004' },
+      { name: 'Katargam', pincode: '395004' },
+      { name: 'Adajan', pincode: '395005' },
+      { name: 'Rander', pincode: '395005' },
+      { name: 'Palanpur', pincode: '395009' },
+      { name: 'Jahangirpura', pincode: '395009' },
+      { name: 'Vesu', pincode: '395007' },
+      { name: 'City Light', pincode: '395007' },
+      { name: 'Althan', pincode: '395017' },
+      { name: 'Bhatar', pincode: '395017' },
+      { name: 'Piplod', pincode: '395007' },
+      { name: 'Dumas', pincode: '394550' },
+      { name: 'Parvat Patiya', pincode: '395010' }
+    ],
+    'Vadodara': [
+      { name: 'Alkapuri', pincode: '390005' },
+      { name: 'Race Course', pincode: '390007' },
+      { name: 'Gotri', pincode: '390021' },
+      { name: 'Manjalpur', pincode: '390011' },
+      { name: 'Makarpura', pincode: '390010' },
+      { name: 'Tarsali', pincode: '390009' },
+      { name: 'Vasna', pincode: '390012' },
+      { name: 'Waghodia Road', pincode: '390019' },
+      { name: 'Karelibaug', pincode: '390018' },
+      { name: 'Fatehgunj', pincode: '390002' },
+      { name: 'Sayajigunj', pincode: '390020' },
+      { name: 'Subhanpura', pincode: '390023' },
+      { name: 'Ellora Park', pincode: '390023' },
+      { name: 'Akota', pincode: '390020' },
+      { name: 'Sama', pincode: '390024' },
+      { name: 'Bhayli', pincode: '390025' },
+      { name: 'Sevasi', pincode: '391101' },
+      { name: 'Bill', pincode: '391160' },
+      { name: 'Padra', pincode: '391440' }
+    ],
+    'Rajkot': [
+      { name: 'Kalavad Road', pincode: '360001' },
+      { name: 'University Road', pincode: '360005' },
+      { name: 'Raiya Road', pincode: '360007' },
+      { name: 'Mavdi', pincode: '360004' },
+      { name: 'Gondal Road', pincode: '360002' },
+      { name: 'Kothariya Road', pincode: '360022' },
+      { name: 'Sadhu Vaswani Road', pincode: '360001' },
+      { name: 'Aji Dam', pincode: '360003' },
+      { name: 'Madhapar', pincode: '360006' },
+      { name: 'Nana Mava', pincode: '360005' }
+    ],
+    'Bhavnagar': [
+      { name: 'Krishnanagar', pincode: '364001' },
+      { name: 'Sidsar Road', pincode: '364002' },
+      { name: 'Nilambaug', pincode: '364003' },
+      { name: 'Kaliyabid', pincode: '364004' },
+      { name: 'Ghogha Circle', pincode: '364005' }
+    ],
+    'Jamnagar': [
+      { name: 'Indira Gandhi Marg', pincode: '361001' },
+      { name: 'Park Colony', pincode: '361008' },
+      { name: 'Digvijay Plot', pincode: '361005' },
+      { name: 'Aerodrome Road', pincode: '361006' }
+    ],
+    'Junagadh': [
+      { name: 'Gandhigram', pincode: '362001' },
+      { name: 'Joshipura', pincode: '362002' },
+      { name: 'Zanzarda Road', pincode: '362015' },
+      { name: 'Girnar Road', pincode: '362004' }
+    ],
+    'Anand': [
+      { name: 'Vallabh Vidyanagar', pincode: '388120' },
+      { name: 'GIDC', pincode: '388001' },
+      { name: 'Gamdi', pincode: '388001' },
+      { name: 'Karamsad', pincode: '388325' }
+    ],
+    'Vapi': [
+      { name: 'GIDC', pincode: '396195' },
+      { name: 'Chala', pincode: '396191' },
+      { name: 'Gunjan', pincode: '396193' },
+      { name: 'Balitha', pincode: '396191' }
+    ]
   };
+
+  // Create simple pincode list from localities for backward compatibility
+  const cityPincodes: Record<string, string[]> = {};
+  Object.keys(cityLocalities).forEach(city => {
+    const uniquePincodes = [...new Set(cityLocalities[city].map(l => l.pincode))];
+    cityPincodes[city] = uniquePincodes;
+  });
   
   let projectIndex = 1;
   
@@ -394,16 +543,17 @@ const generateAllProjects = (): any[] => {
         projectName = `${developer} ${city} ${i + 1}`;
       }
       
-      // Get random pincode for the city
-      const cityPincodeList = cityPincodes[city] || ['000000'];
-      const pincode = cityPincodeList[Math.floor(Math.random() * cityPincodeList.length)];
+      // Get random locality for the city
+      const cityLocalityList = cityLocalities[city] || [{ name: 'Unknown', pincode: '000000' }];
+      const randomLocality = cityLocalityList[Math.floor(Math.random() * cityLocalityList.length)];
       
       allProjects.push({
         projectName: projectName,
         promoterName: developer,
         projectType: projectType,
         district: city,
-        pincode: pincode,
+        locality: randomLocality.name,
+        pincode: randomLocality.pincode,
         reraId: `PR/GJ/${city.toUpperCase()}/${city.toUpperCase()}/RAA${String(projectIndex).padStart(5, '0')}/${String(Math.floor(Math.random() * 30) + 1).padStart(2, '0')}${String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')}${22 + Math.floor(Math.random() * 3)}`,
         approvedOn: `${Math.floor(Math.random() * 28) + 1}-${String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')}-${2022 + Math.floor(Math.random() * 2)}`,
         bookingPercentage: bookingPercentage,
@@ -422,22 +572,166 @@ const generateAllProjects = (): any[] => {
 // Generate all projects once
 const allGeneratedProjects = generateAllProjects();
 
-// Get city pincodes mapping for frontend
-const getCityPincodes = () => {
-  const cityPincodes: Record<string, string[]> = {
-    'Ahmedabad': ['380001', '380002', '380003', '380004', '380005', '380006', '380007', '380008', '380009', '380013', '380015', '380016', '380018', '380019', '380021', '380022', '380024', '380026', '380027', '380028', '380051', '380052', '380053', '380054', '380055', '380061', '380063'],
-    'Surat': ['395001', '395002', '395003', '395004', '395005', '395006', '395007', '395008', '395009', '395010', '395017', '394101', '394107', '394210', '394220', '394221', '394230', '394248', '394327'],
-    'Vadodara': ['390001', '390002', '390003', '390004', '390005', '390006', '390007', '390008', '390009', '390010', '390011', '390012', '390013', '390015', '390016', '390017', '390018', '390019', '390020', '390021', '390022'],
-    'Rajkot': ['360001', '360002', '360003', '360004', '360005', '360006', '360007', '360110', '360311', '360370', '360410', '360490', '360510', '360575'],
-    'Gandhinagar': ['382007', '382009', '382010', '382011', '382012', '382013', '382014', '382015', '382016', '382017', '382018', '382019', '382020', '382021', '382022', '382023', '382024', '382025', '382026', '382027', '382028', '382029', '382421', '382422', '382423', '382424', '382425', '382426', '382427', '382428', '382721'],
-    'Bhavnagar': ['364001', '364002', '364003', '364004', '364005', '364290', '364310', '364505', '364710', '364750'],
-    'Jamnagar': ['361001', '361002', '361003', '361004', '361005', '361006', '361008', '361009', '361010', '361011', '361012'],
-    'Junagadh': ['362001', '362002', '362003', '362004', '362005', '362015', '362220', '362225', '362226', '362227'],
-    'Anand': ['388001', '388002', '388120', '388180', '388220', '388230', '388235', '388260', '388270', '388305'],
-    'Vapi': ['396191', '396193', '396195', '396230', '396235', '396415', '396424', '396450', '396465', '396590']
+// Get city localities mapping for frontend
+const getCityLocalities = () => {
+  // Return the cityLocalities defined above in the generateAllProjects function
+  // We'll need to duplicate or move it here
+  const localities: Record<string, Locality[]> = {
+    'Gandhinagar': [
+      { name: 'Sector 1', pincode: '382007' },
+      { name: 'Sector 2', pincode: '382007' },
+      { name: 'Sector 3', pincode: '382009' },
+      { name: 'Sector 4', pincode: '382009' },
+      { name: 'Sector 5', pincode: '382010' },
+      { name: 'Sector 6', pincode: '382010' },
+      { name: 'Sector 7', pincode: '382011' },
+      { name: 'Sector 11', pincode: '382011' },
+      { name: 'Sector 12', pincode: '382012' },
+      { name: 'Sector 13', pincode: '382013' },
+      { name: 'Sector 14', pincode: '382014' },
+      { name: 'Sector 15', pincode: '382015' },
+      { name: 'Sector 16', pincode: '382016' },
+      { name: 'Sector 21', pincode: '382021' },
+      { name: 'Sector 22', pincode: '382022' },
+      { name: 'Sector 23', pincode: '382023' },
+      { name: 'Sector 24', pincode: '382024' },
+      { name: 'Sector 25', pincode: '382025' },
+      { name: 'Sector 26', pincode: '382026' },
+      { name: 'Sector 27', pincode: '382027' },
+      { name: 'Sector 28', pincode: '382028' },
+      { name: 'Sector 29', pincode: '382029' },
+      { name: 'Kudasan', pincode: '382421' },
+      { name: 'Sargasan', pincode: '382423' },
+      { name: 'GIFT City', pincode: '382355' },
+      { name: 'Randesan', pincode: '382424' },
+      { name: 'Raysan', pincode: '382425' },
+      { name: 'Pethapur', pincode: '382426' },
+      { name: 'Shahpur', pincode: '382427' },
+      { name: 'Vavol', pincode: '382428' },
+      { name: 'Chiloda', pincode: '382721' }
+    ],
+    'Ahmedabad': [
+      { name: 'Kalupur', pincode: '380001' },
+      { name: 'Dariyapur', pincode: '380001' },
+      { name: 'Shahpur', pincode: '380001' },
+      { name: 'Khadia', pincode: '380002' },
+      { name: 'Kankaria', pincode: '380002' },
+      { name: 'Raikhad', pincode: '380003' },
+      { name: 'Manek Chowk', pincode: '380003' },
+      { name: 'Shahibaug', pincode: '380004' },
+      { name: 'Saraspur', pincode: '380005' },
+      { name: 'Paldi', pincode: '380006' },
+      { name: 'Navrangpura', pincode: '380009' },
+      { name: 'Naranpura', pincode: '380013' },
+      { name: 'Satellite', pincode: '380015' },
+      { name: 'Ashram Road', pincode: '380019' },
+      { name: 'Maninagar', pincode: '380022' },
+      { name: 'Vastrapur', pincode: '380026' },
+      { name: 'Thaltej', pincode: '380054' },
+      { name: 'Prahlad Nagar', pincode: '380051' },
+      { name: 'Bodakdev', pincode: '380054' },
+      { name: 'SG Highway', pincode: '380054' },
+      { name: 'Gota', pincode: '382481' },
+      { name: 'Chandkheda', pincode: '382470' },
+      { name: 'Motera', pincode: '380005' },
+      { name: 'Sabarmati', pincode: '380018' },
+      { name: 'Bopal', pincode: '380058' },
+      { name: 'Shela', pincode: '380058' },
+      { name: 'South Bopal', pincode: '380058' }
+    ],
+    'Surat': [
+      { name: 'Nanpura', pincode: '395001' },
+      { name: 'Athwalines', pincode: '395001' },
+      { name: 'Ghod Dod Road', pincode: '395001' },
+      { name: 'Ring Road', pincode: '395002' },
+      { name: 'Udhna', pincode: '395002' },
+      { name: 'Majura Gate', pincode: '395003' },
+      { name: 'Varachha', pincode: '395004' },
+      { name: 'Katargam', pincode: '395004' },
+      { name: 'Adajan', pincode: '395005' },
+      { name: 'Rander', pincode: '395005' },
+      { name: 'Palanpur', pincode: '395009' },
+      { name: 'Jahangirpura', pincode: '395009' },
+      { name: 'Vesu', pincode: '395007' },
+      { name: 'City Light', pincode: '395007' },
+      { name: 'Althan', pincode: '395017' },
+      { name: 'Bhatar', pincode: '395017' },
+      { name: 'Piplod', pincode: '395007' },
+      { name: 'Dumas', pincode: '394550' },
+      { name: 'Parvat Patiya', pincode: '395010' }
+    ],
+    'Vadodara': [
+      { name: 'Alkapuri', pincode: '390005' },
+      { name: 'Race Course', pincode: '390007' },
+      { name: 'Gotri', pincode: '390021' },
+      { name: 'Manjalpur', pincode: '390011' },
+      { name: 'Makarpura', pincode: '390010' },
+      { name: 'Tarsali', pincode: '390009' },
+      { name: 'Vasna', pincode: '390012' },
+      { name: 'Waghodia Road', pincode: '390019' },
+      { name: 'Karelibaug', pincode: '390018' },
+      { name: 'Fatehgunj', pincode: '390002' },
+      { name: 'Sayajigunj', pincode: '390020' },
+      { name: 'Subhanpura', pincode: '390023' },
+      { name: 'Ellora Park', pincode: '390023' },
+      { name: 'Akota', pincode: '390020' },
+      { name: 'Sama', pincode: '390024' },
+      { name: 'Bhayli', pincode: '390025' },
+      { name: 'Sevasi', pincode: '391101' },
+      { name: 'Bill', pincode: '391160' },
+      { name: 'Padra', pincode: '391440' }
+    ],
+    'Rajkot': [
+      { name: 'Kalavad Road', pincode: '360001' },
+      { name: 'University Road', pincode: '360005' },
+      { name: 'Raiya Road', pincode: '360007' },
+      { name: 'Mavdi', pincode: '360004' },
+      { name: 'Gondal Road', pincode: '360002' },
+      { name: 'Kothariya Road', pincode: '360022' },
+      { name: 'Sadhu Vaswani Road', pincode: '360001' },
+      { name: 'Aji Dam', pincode: '360003' },
+      { name: 'Madhapar', pincode: '360006' },
+      { name: 'Nana Mava', pincode: '360005' }
+    ],
+    'Bhavnagar': [
+      { name: 'Krishnanagar', pincode: '364001' },
+      { name: 'Sidsar Road', pincode: '364002' },
+      { name: 'Nilambaug', pincode: '364003' },
+      { name: 'Kaliyabid', pincode: '364004' },
+      { name: 'Ghogha Circle', pincode: '364005' }
+    ],
+    'Jamnagar': [
+      { name: 'Indira Gandhi Marg', pincode: '361001' },
+      { name: 'Park Colony', pincode: '361008' },
+      { name: 'Digvijay Plot', pincode: '361005' },
+      { name: 'Aerodrome Road', pincode: '361006' }
+    ],
+    'Junagadh': [
+      { name: 'Gandhigram', pincode: '362001' },
+      { name: 'Joshipura', pincode: '362002' },
+      { name: 'Zanzarda Road', pincode: '362015' },
+      { name: 'Girnar Road', pincode: '362004' }
+    ],
+    'Anand': [
+      { name: 'Vallabh Vidyanagar', pincode: '388120' },
+      { name: 'GIDC', pincode: '388001' },
+      { name: 'Gamdi', pincode: '388001' },
+      { name: 'Karamsad', pincode: '388325' }
+    ],
+    'Vapi': [
+      { name: 'GIDC', pincode: '396195' },
+      { name: 'Chala', pincode: '396191' },
+      { name: 'Gunjan', pincode: '396193' },
+      { name: 'Balitha', pincode: '396191' }
+    ]
   };
-  return cityPincodes;
+  return localities;
 };
+
+interface Locality {
+  name: string;
+  pincode: string;
+}
 
 scraperRoutes.get('/projects', (req, res) => {
   const page = parseInt(req.query.page as string) || 1;
@@ -445,6 +739,7 @@ scraperRoutes.get('/projects', (req, res) => {
   const city = req.query.city as string;
   const search = req.query.search as string;
   const pincode = req.query.pincode as string;
+  const locality = req.query.locality as string;
   
   // Use generated projects + original API projects
   const combinedProjects = [...mockRealData.recentProjects, ...allGeneratedProjects];
@@ -466,6 +761,13 @@ scraperRoutes.get('/projects', (req, res) => {
     );
   }
   
+  // Apply locality filter
+  if (locality) {
+    filteredProjects = filteredProjects.filter(p => 
+      p.locality && p.locality.toLowerCase() === locality.toLowerCase()
+    );
+  }
+  
   // Apply search filter
   if (search) {
     const searchLower = search.toLowerCase();
@@ -473,7 +775,8 @@ scraperRoutes.get('/projects', (req, res) => {
       p.projectName.toLowerCase().includes(searchLower) ||
       p.promoterName.toLowerCase().includes(searchLower) ||
       p.reraId.toLowerCase().includes(searchLower) ||
-      p.pincode.includes(search)
+      p.pincode.includes(search) ||
+      (p.locality && p.locality.toLowerCase().includes(searchLower))
     );
   }
   
@@ -497,24 +800,24 @@ scraperRoutes.get('/projects', (req, res) => {
   });
 });
 
-// Get pincodes for a specific city
-scraperRoutes.get('/pincodes', (req, res) => {
+// Get localities for a specific city
+scraperRoutes.get('/localities', (req, res) => {
   const city = req.query.city as string;
-  const cityPincodes = getCityPincodes();
+  const cityLocalities = getCityLocalities();
   
-  if (city && cityPincodes[city]) {
+  if (city && cityLocalities[city]) {
     res.json({
       success: true,
       data: {
         city: city,
-        pincodes: cityPincodes[city]
+        localities: cityLocalities[city]
       }
     });
   } else if (!city) {
-    // Return all pincodes for all cities
+    // Return all localities for all cities
     res.json({
       success: true,
-      data: cityPincodes
+      data: cityLocalities
     });
   } else {
     res.json({

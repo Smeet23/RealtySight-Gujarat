@@ -2,6 +2,11 @@
 
 import { useState, useEffect } from 'react';
 
+interface Locality {
+  name: string;
+  pincode: string;
+}
+
 interface SearchFilterProps {
   onSearch: (filters: any) => void;
   cities: string[];
@@ -11,36 +16,36 @@ export default function SearchFilter({ onSearch, cities }: SearchFilterProps) {
   const [filters, setFilters] = useState({
     searchText: '',
     city: '',
-    pincode: '',
+    locality: '',
     projectType: '',
     bookingStatus: '',
     priceRange: '',
     developer: ''
   });
   
-  const [pincodes, setPincodes] = useState<string[]>([]);
+  const [localities, setLocalities] = useState<Locality[]>([]);
 
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  // Fetch pincodes when city changes
+  // Fetch localities when city changes
   useEffect(() => {
     if (filters.city) {
-      fetch(`http://localhost:5001/api/scraper/pincodes?city=${filters.city}`)
+      fetch(`http://localhost:5001/api/scraper/localities?city=${filters.city}`)
         .then(res => res.json())
         .then(data => {
           if (data.success) {
-            setPincodes(data.data.pincodes);
+            setLocalities(data.data.localities);
           }
         })
         .catch(err => {
-          console.error('Error fetching pincodes:', err);
-          setPincodes([]);
+          console.error('Error fetching localities:', err);
+          setLocalities([]);
         });
     } else {
-      setPincodes([]);
-      // Clear pincode when city is cleared
-      if (filters.pincode) {
-        const newFilters = { ...filters, pincode: '' };
+      setLocalities([]);
+      // Clear locality when city is cleared
+      if (filters.locality) {
+        const newFilters = { ...filters, locality: '' };
         setFilters(newFilters);
         onSearch(newFilters);
       }
@@ -79,7 +84,7 @@ export default function SearchFilter({ onSearch, cities }: SearchFilterProps) {
     const clearedFilters = {
       searchText: '',
       city: '',
-      pincode: '',
+      locality: '',
       projectType: '',
       bookingStatus: '',
       priceRange: '',
@@ -138,14 +143,16 @@ export default function SearchFilter({ onSearch, cities }: SearchFilterProps) {
         </select>
 
         <select
-          value={filters.pincode}
-          onChange={(e) => handleChange('pincode', e.target.value)}
+          value={filters.locality}
+          onChange={(e) => handleChange('locality', e.target.value)}
           className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           disabled={!filters.city}
         >
-          <option value="">All Areas (Pincode)</option>
-          {pincodes.map(pincode => (
-            <option key={pincode} value={pincode}>{pincode}</option>
+          <option value="">All Localities</option>
+          {localities.map(locality => (
+            <option key={locality.name} value={locality.name}>
+              {locality.name} ({locality.pincode})
+            </option>
           ))}
         </select>
 

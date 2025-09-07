@@ -9,6 +9,7 @@ interface Project {
   promoterName: string;
   projectType: string;
   district: string;
+  locality?: string;
   pincode: string;
   reraId: string;
   approvedOn: string;
@@ -46,7 +47,7 @@ export default function SearchPage() {
       
       if (filters?.searchText) params.append('search', filters.searchText);
       if (filters?.city) params.append('city', filters.city);
-      if (filters?.pincode) params.append('pincode', filters.pincode);
+      if (filters?.locality) params.append('locality', filters.locality);
       
       const response = await fetch(`http://localhost:5001/api/scraper/projects?${params}`);
       const result = await response.json();
@@ -180,7 +181,9 @@ export default function SearchPage() {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Location:</span>
-                    <span className="font-medium">{project.district} - {project.pincode}</span>
+                    <span className="font-medium">
+                      {project.locality ? `${project.locality}, ${project.district}` : project.district} - {project.pincode}
+                    </span>
                   </div>
                   {project.price && (
                     <div className="flex justify-between text-sm">
@@ -265,7 +268,7 @@ export default function SearchPage() {
                       {project.promoterName}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {project.district} - {project.pincode}
+                      {project.locality ? `${project.locality}, ${project.district}` : project.district} - {project.pincode}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {project.projectType}
