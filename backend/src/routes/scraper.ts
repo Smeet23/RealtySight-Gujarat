@@ -358,6 +358,20 @@ const generateAllProjects = (): any[] => {
     'Anand': 621,
     'Vapi': 150
   };
+
+  // City-wise pincode mappings based on real Gujarat pincodes
+  const cityPincodes: Record<string, string[]> = {
+    'Ahmedabad': ['380001', '380002', '380003', '380004', '380005', '380006', '380007', '380008', '380009', '380013', '380015', '380016', '380018', '380019', '380021', '380022', '380024', '380026', '380027', '380028', '380051', '380052', '380053', '380054', '380055', '380061', '380063'],
+    'Surat': ['395001', '395002', '395003', '395004', '395005', '395006', '395007', '395008', '395009', '395010', '395017', '394101', '394107', '394210', '394220', '394221', '394230', '394248', '394327'],
+    'Vadodara': ['390001', '390002', '390003', '390004', '390005', '390006', '390007', '390008', '390009', '390010', '390011', '390012', '390013', '390015', '390016', '390017', '390018', '390019', '390020', '390021', '390022'],
+    'Rajkot': ['360001', '360002', '360003', '360004', '360005', '360006', '360007', '360110', '360311', '360370', '360410', '360490', '360510', '360575'],
+    'Gandhinagar': ['382007', '382009', '382010', '382011', '382012', '382013', '382014', '382015', '382016', '382017', '382018', '382019', '382020', '382021', '382022', '382023', '382024', '382025', '382026', '382027', '382028', '382029', '382421', '382422', '382423', '382424', '382425', '382426', '382427', '382428', '382721'],
+    'Bhavnagar': ['364001', '364002', '364003', '364004', '364005', '364290', '364310', '364505', '364710', '364750'],
+    'Jamnagar': ['361001', '361002', '361003', '361004', '361005', '361006', '361008', '361009', '361010', '361011', '361012'],
+    'Junagadh': ['362001', '362002', '362003', '362004', '362005', '362015', '362220', '362225', '362226', '362227'],
+    'Anand': ['388001', '388002', '388120', '388180', '388220', '388230', '388235', '388260', '388270', '388305'],
+    'Vapi': ['396191', '396193', '396195', '396230', '396235', '396415', '396424', '396450', '396465', '396590']
+  };
   
   let projectIndex = 1;
   
@@ -380,11 +394,16 @@ const generateAllProjects = (): any[] => {
         projectName = `${developer} ${city} ${i + 1}`;
       }
       
+      // Get random pincode for the city
+      const cityPincodeList = cityPincodes[city] || ['000000'];
+      const pincode = cityPincodeList[Math.floor(Math.random() * cityPincodeList.length)];
+      
       allProjects.push({
         projectName: projectName,
         promoterName: developer,
         projectType: projectType,
         district: city,
+        pincode: pincode,
         reraId: `PR/GJ/${city.toUpperCase()}/${city.toUpperCase()}/RAA${String(projectIndex).padStart(5, '0')}/${String(Math.floor(Math.random() * 30) + 1).padStart(2, '0')}${String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')}${22 + Math.floor(Math.random() * 3)}`,
         approvedOn: `${Math.floor(Math.random() * 28) + 1}-${String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')}-${2022 + Math.floor(Math.random() * 2)}`,
         bookingPercentage: bookingPercentage,
@@ -403,11 +422,29 @@ const generateAllProjects = (): any[] => {
 // Generate all projects once
 const allGeneratedProjects = generateAllProjects();
 
+// Get city pincodes mapping for frontend
+const getCityPincodes = () => {
+  const cityPincodes: Record<string, string[]> = {
+    'Ahmedabad': ['380001', '380002', '380003', '380004', '380005', '380006', '380007', '380008', '380009', '380013', '380015', '380016', '380018', '380019', '380021', '380022', '380024', '380026', '380027', '380028', '380051', '380052', '380053', '380054', '380055', '380061', '380063'],
+    'Surat': ['395001', '395002', '395003', '395004', '395005', '395006', '395007', '395008', '395009', '395010', '395017', '394101', '394107', '394210', '394220', '394221', '394230', '394248', '394327'],
+    'Vadodara': ['390001', '390002', '390003', '390004', '390005', '390006', '390007', '390008', '390009', '390010', '390011', '390012', '390013', '390015', '390016', '390017', '390018', '390019', '390020', '390021', '390022'],
+    'Rajkot': ['360001', '360002', '360003', '360004', '360005', '360006', '360007', '360110', '360311', '360370', '360410', '360490', '360510', '360575'],
+    'Gandhinagar': ['382007', '382009', '382010', '382011', '382012', '382013', '382014', '382015', '382016', '382017', '382018', '382019', '382020', '382021', '382022', '382023', '382024', '382025', '382026', '382027', '382028', '382029', '382421', '382422', '382423', '382424', '382425', '382426', '382427', '382428', '382721'],
+    'Bhavnagar': ['364001', '364002', '364003', '364004', '364005', '364290', '364310', '364505', '364710', '364750'],
+    'Jamnagar': ['361001', '361002', '361003', '361004', '361005', '361006', '361008', '361009', '361010', '361011', '361012'],
+    'Junagadh': ['362001', '362002', '362003', '362004', '362005', '362015', '362220', '362225', '362226', '362227'],
+    'Anand': ['388001', '388002', '388120', '388180', '388220', '388230', '388235', '388260', '388270', '388305'],
+    'Vapi': ['396191', '396193', '396195', '396230', '396235', '396415', '396424', '396450', '396465', '396590']
+  };
+  return cityPincodes;
+};
+
 scraperRoutes.get('/projects', (req, res) => {
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 20;
   const city = req.query.city as string;
   const search = req.query.search as string;
+  const pincode = req.query.pincode as string;
   
   // Use generated projects + original API projects
   const combinedProjects = [...mockRealData.recentProjects, ...allGeneratedProjects];
@@ -422,13 +459,21 @@ scraperRoutes.get('/projects', (req, res) => {
     );
   }
   
+  // Apply pincode filter
+  if (pincode) {
+    filteredProjects = filteredProjects.filter(p => 
+      p.pincode === pincode
+    );
+  }
+  
   // Apply search filter
   if (search) {
     const searchLower = search.toLowerCase();
     filteredProjects = filteredProjects.filter(p =>
       p.projectName.toLowerCase().includes(searchLower) ||
       p.promoterName.toLowerCase().includes(searchLower) ||
-      p.reraId.toLowerCase().includes(searchLower)
+      p.reraId.toLowerCase().includes(searchLower) ||
+      p.pincode.includes(search)
     );
   }
   
@@ -450,6 +495,33 @@ scraperRoutes.get('/projects', (req, res) => {
       }
     }
   });
+});
+
+// Get pincodes for a specific city
+scraperRoutes.get('/pincodes', (req, res) => {
+  const city = req.query.city as string;
+  const cityPincodes = getCityPincodes();
+  
+  if (city && cityPincodes[city]) {
+    res.json({
+      success: true,
+      data: {
+        city: city,
+        pincodes: cityPincodes[city]
+      }
+    });
+  } else if (!city) {
+    // Return all pincodes for all cities
+    res.json({
+      success: true,
+      data: cityPincodes
+    });
+  } else {
+    res.json({
+      success: false,
+      error: 'City not found'
+    });
+  }
 });
 
 scraperRoutes.get('/data', (_req, res) => {

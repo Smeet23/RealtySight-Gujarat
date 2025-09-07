@@ -9,6 +9,7 @@ interface Project {
   promoterName: string;
   projectType: string;
   district: string;
+  pincode: string;
   reraId: string;
   approvedOn: string;
   bookingPercentage: number;
@@ -35,11 +36,19 @@ export default function SearchPage() {
     fetchProjects();
   }, []);
 
-  const fetchProjects = async (page: number = 1, search?: string) => {
+  const fetchProjects = async (page: number = 1, filters?: any) => {
     try {
       setLoading(true);
-      const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
-      const response = await fetch(`http://localhost:5001/api/scraper/projects?page=${page}&limit=24${searchParam}`);
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '24'
+      });
+      
+      if (filters?.searchText) params.append('search', filters.searchText);
+      if (filters?.city) params.append('city', filters.city);
+      if (filters?.pincode) params.append('pincode', filters.pincode);
+      
+      const response = await fetch(`http://localhost:5001/api/scraper/projects?${params}`);
       const result = await response.json();
       
       if (result.success) {
@@ -56,56 +65,9 @@ export default function SearchPage() {
   };
 
   const handleSearch = (filters: any) => {
-    let filtered = [...projects];
-
-    // Apply filters
-    if (filters.searchText) {
-      const searchLower = filters.searchText.toLowerCase();
-      filtered = filtered.filter(p => 
-        p.projectName.toLowerCase().includes(searchLower) ||
-        p.promoterName.toLowerCase().includes(searchLower) ||
-        p.reraId.toLowerCase().includes(searchLower)
-      );
-    }
-
-    if (filters.city) {
-      filtered = filtered.filter(p => p.district === filters.city);
-    }
-
-    if (filters.projectType) {
-      filtered = filtered.filter(p => p.projectType.includes(filters.projectType));
-    }
-
-    if (filters.bookingStatus) {
-      const [min, max] = filters.bookingStatus.split('-').map(Number);
-      if (max) {
-        filtered = filtered.filter(p => p.bookingPercentage >= min && p.bookingPercentage <= max);
-      } else {
-        filtered = filtered.filter(p => p.bookingPercentage === 100);
-      }
-    }
-
-    if (filters.developer) {
-      filtered = filtered.filter(p => 
-        p.promoterName.toLowerCase().includes(filters.developer.toLowerCase())
-      );
-    }
-
-    // Apply sorting
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case 'bookingPercentage':
-          return b.bookingPercentage - a.bookingPercentage;
-        case 'projectName':
-          return a.projectName.localeCompare(b.projectName);
-        case 'date':
-          return new Date(b.approvedOn).getTime() - new Date(a.approvedOn).getTime();
-        default:
-          return 0;
-      }
-    });
-
-    setFilteredProjects(filtered);
+    // Reset to page 1 and fetch with new filters
+    setCurrentPage(1);
+    fetchProjects(1, filters);
   };
 
   const handleSort = (newSortBy: string) => {
@@ -218,7 +180,7 @@ export default function SearchPage() {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Location:</span>
-                    <span className="font-medium">{project.district}</span>
+                    <span className="font-medium">{project.district} - {project.pincode}</span>
                   </div>
                   {project.price && (
                     <div className="flex justify-between text-sm">
@@ -303,7 +265,7 @@ export default function SearchPage() {
                       {project.promoterName}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {project.district}
+                      {project.district} - {project.pincode}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {project.projectType}

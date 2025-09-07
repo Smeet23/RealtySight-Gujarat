@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface SearchFilterProps {
   onSearch: (filters: any) => void;
@@ -11,13 +11,41 @@ export default function SearchFilter({ onSearch, cities }: SearchFilterProps) {
   const [filters, setFilters] = useState({
     searchText: '',
     city: '',
+    pincode: '',
     projectType: '',
     bookingStatus: '',
     priceRange: '',
     developer: ''
   });
+  
+  const [pincodes, setPincodes] = useState<string[]>([]);
 
   const [showAdvanced, setShowAdvanced] = useState(false);
+
+  // Fetch pincodes when city changes
+  useEffect(() => {
+    if (filters.city) {
+      fetch(`http://localhost:5001/api/scraper/pincodes?city=${filters.city}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setPincodes(data.data.pincodes);
+          }
+        })
+        .catch(err => {
+          console.error('Error fetching pincodes:', err);
+          setPincodes([]);
+        });
+    } else {
+      setPincodes([]);
+      // Clear pincode when city is cleared
+      if (filters.pincode) {
+        const newFilters = { ...filters, pincode: '' };
+        setFilters(newFilters);
+        onSearch(newFilters);
+      }
+    }
+  }, [filters.city]);
 
   const projectTypes = [
     'Residential/Group Housing',
@@ -51,6 +79,7 @@ export default function SearchFilter({ onSearch, cities }: SearchFilterProps) {
     const clearedFilters = {
       searchText: '',
       city: '',
+      pincode: '',
       projectType: '',
       bookingStatus: '',
       priceRange: '',
@@ -96,7 +125,7 @@ export default function SearchFilter({ onSearch, cities }: SearchFilterProps) {
       </div>
 
       {/* Quick Filters */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
         <select
           value={filters.city}
           onChange={(e) => handleChange('city', e.target.value)}
@@ -105,6 +134,18 @@ export default function SearchFilter({ onSearch, cities }: SearchFilterProps) {
           <option value="">All Cities</option>
           {cities.map(city => (
             <option key={city} value={city}>{city}</option>
+          ))}
+        </select>
+
+        <select
+          value={filters.pincode}
+          onChange={(e) => handleChange('pincode', e.target.value)}
+          className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          disabled={!filters.city}
+        >
+          <option value="">All Areas (Pincode)</option>
+          {pincodes.map(pincode => (
+            <option key={pincode} value={pincode}>{pincode}</option>
           ))}
         </select>
 
