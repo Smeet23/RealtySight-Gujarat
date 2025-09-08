@@ -96,105 +96,80 @@ export default function ProjectDetailPage() {
   }, [params.id]);
 
   const fetchProjectDetails = async () => {
-    // In production, fetch from API
-    // For now, using mock detailed data
-    const mockProject: ProjectDetail = {
-      projectName: "Sadama Homes 2",
-      reraId: params.id as string || "PR/GJ/AHMEDABAD/AHMEDABAD/RAA00444/EX1/150219",
-      developerName: "Lavori Corporation",
-      projectType: "Residential/Group Housing",
-      projectStatus: "Under Construction",
+    try {
+      setLoading(true);
+      const response = await fetch(`http://localhost:5001/api/scraper/project/${encodeURIComponent(params.id as string)}`);
+      const result = await response.json();
       
-      address: "Near Kotarpur Water Works, Behind Nandagram Society",
-      locality: "Nana Chiloda",
-      city: "Ahmedabad",
-      district: "Ahmedabad",
-      pincode: "382330",
-      latitude: 23.1234,
-      longitude: 72.5678,
+      if (result.success) {
+        // Map API response to ProjectDetail interface
+        const apiProject = result.data;
+        const projectDetail: ProjectDetail = {
+          projectName: apiProject.projectName,
+          reraId: apiProject.reraId,
+          developerName: apiProject.promoterName,
+          projectType: apiProject.projectType,
+          projectStatus: apiProject.status || "Registered",
       
-      totalArea: 12071,
-      totalUnits: 83,
-      totalBuildings: 4,
-      totalFloors: 15,
+      address: apiProject.address || "",
+      locality: apiProject.locality || "",
+      city: apiProject.district || "",
+      district: apiProject.district || "",
+      pincode: apiProject.pincode || "",
+      latitude: 23.0225,  // Default coordinates for Ahmedabad
+      longitude: 72.5714,
       
-      totalBooked: 68,
-      totalAvailable: 15,
-      bookingPercentage: 82,
-      lastUpdated: "30-12-2019",
+      totalArea: apiProject.projectArea || 0,
+      totalUnits: apiProject.totalUnits || 0,
+      totalBuildings: apiProject.totalBuildings || 0,
+      totalFloors: 15,  // Not in real data
       
-      projectStartDate: "29-05-2007",
-      projectEndDate: "31-12-2019",
-      revisedEndDate: "31-12-2020",
-      possessionDate: "31-03-2021",
+      totalBooked: (apiProject.totalUnits - apiProject.availableUnits) || 0,
+      totalAvailable: apiProject.availableUnits || 0,
+      bookingPercentage: apiProject.bookingPercentage || 0,
+      lastUpdated: apiProject.lastUpdated || new Date().toISOString(),
       
-      minPrice: 4500000,
-      maxPrice: 8500000,
+      projectStartDate: apiProject.approvedOn || "",
+      projectEndDate: apiProject.completionDate || "",
+      revisedEndDate: apiProject.completionDate || "",
+      possessionDate: apiProject.completionDate || "",
+      
+      minPrice: apiProject.minPrice || 0,
+      maxPrice: apiProject.maxPrice || 0,
       avgPricePerSqFt: 4500,
       
-      unitDetails: [
-        {
-          unitType: "1 BHK",
-          configuration: "1 Bedroom, 1 Bathroom, 1 Balcony",
-          carpetArea: 450,
-          totalUnits: 20,
-          bookedUnits: 18,
-          availableUnits: 2,
-          priceRange: "₹45-50 Lakhs"
-        },
-        {
-          unitType: "2 BHK",
-          configuration: "2 Bedrooms, 2 Bathrooms, 2 Balconies",
-          carpetArea: 650,
-          totalUnits: 40,
-          bookedUnits: 35,
-          availableUnits: 5,
-          priceRange: "₹55-65 Lakhs"
-        },
-        {
-          unitType: "3 BHK",
-          configuration: "3 Bedrooms, 3 Bathrooms, 3 Balconies",
-          carpetArea: 950,
-          totalUnits: 23,
-          bookedUnits: 15,
-          availableUnits: 8,
-          priceRange: "₹75-85 Lakhs"
-        }
-      ],
+      unitDetails: apiProject.unitDetails || [],
       
-      amenities: [
-        "Swimming Pool", "Gym", "Club House", "Children's Play Area",
-        "Garden", "Power Backup", "Lift", "Security", "CCTV",
-        "Intercom", "Fire Safety", "Rain Water Harvesting"
-      ],
+      amenities: apiProject.amenities || [],
       
-      approvals: {
-        landUse: true,
-        environment: true,
-        fireNOC: true,
+      approvals: apiProject.approvals || {
+        landUse: false,
+        environment: false,
+        fireNOC: false,
         airport: false,
-        municipality: true
+        municipality: false
       },
       
-      developerEmail: "info@lavoricorp.com",
-      developerPhone: "+91 98765 43210",
-      developerWebsite: "www.lavoricorp.com",
-      developerReraNo: "RAA00444",
+      developerEmail: apiProject.developerEmail || "",
+      developerPhone: apiProject.developerPhone || "",
+      developerWebsite: apiProject.developerWebsite || "",
+      developerReraNo: apiProject.reraId,
       
-      viewsCount: 1234,
-      inquiriesCount: 89,
+      viewsCount: 0,
+      inquiriesCount: 0,
       
-      bookingTrend: [
-        { month: "Jan 2024", bookings: 5, percentage: 65 },
-        { month: "Feb 2024", bookings: 8, percentage: 70 },
-        { month: "Mar 2024", bookings: 12, percentage: 75 },
-        { month: "Apr 2024", bookings: 6, percentage: 78 },
-        { month: "May 2024", bookings: 9, percentage: 82 }
-      ]
+      bookingTrend: []
     };
     
-    setProject(mockProject);
-    setLoading(false);
+        setProject(projectDetail);
+      } else {
+        console.error('Failed to fetch project:', result.error);
+      }
+    } catch (error) {
+      console.error('Error fetching project details:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (loading) {

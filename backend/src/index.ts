@@ -25,13 +25,13 @@ async function startServer() {
     // await initializeRedis();
     // logger.info('Redis connected successfully');
     
-    logger.info('Starting server without database (mock mode)');
+    logger.info('Starting server with real RERA data');
 
     app.use(helmet());
     app.use(cors({
       origin: process.env.NODE_ENV === 'production' 
         ? process.env.FRONTEND_URL 
-        : 'http://localhost:3000',
+        : ['http://localhost:3000', 'http://localhost:3001'],
       credentials: true
     }));
     app.use(compression());

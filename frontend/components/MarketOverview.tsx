@@ -35,53 +35,13 @@ export default function MarketOverview({ city }: MarketOverviewProps) {
         if (result.success && result.data) {
           setMarketData(result.data);
         } else {
-          // Fallback to mock data if API fails
-          setMockData();
+          // No fallback - only use real data
+          console.error('Failed to fetch market data');
         }
       } catch (error) {
         console.error('Error fetching market data:', error);
-        // Fallback to mock data if API fails
-        setMockData();
+        // No fallback - only use real data
       }
-    };
-
-    const setMockData = () => {
-      const mockData: Record<string, MarketData> = {
-      Ahmedabad: {
-        totalProjects: 450,
-        avgBookingRate: 65.5,
-        avgPricePerSqFt: 4500,
-        topDevelopers: ["Adani Realty", "Ganesh Housing", "Goyal & Co"],
-        newLaunches: 28,
-        completedProjects: 145,
-      },
-      Surat: {
-        totalProjects: 320,
-        avgBookingRate: 72.3,
-        avgPricePerSqFt: 3800,
-        topDevelopers: ["Shivalik Group", "SNS Developers", "Dream House"],
-        newLaunches: 22,
-        completedProjects: 98,
-      },
-      Vadodara: {
-        totalProjects: 180,
-        avgBookingRate: 58.2,
-        avgPricePerSqFt: 3200,
-        topDevelopers: ["Alembic Real Estate", "Savvy Group", "Satyam Developers"],
-        newLaunches: 15,
-        completedProjects: 62,
-      },
-      Rajkot: {
-        totalProjects: 150,
-        avgBookingRate: 61.8,
-        avgPricePerSqFt: 2900,
-        topDevelopers: ["KP Group", "Silver Oak", "RK Developers"],
-        newLaunches: 12,
-        completedProjects: 48,
-      },
-    };
-
-      setMarketData(mockData[city] || mockData.Ahmedabad);
     };
 
     fetchMarketData();

@@ -3,6 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+
+// Dynamically import map to avoid SSR issues
+const ProjectMap = dynamic(() => import('@/components/ProjectMap'), {
+  ssr: false,
+  loading: () => <div className="h-96 bg-gray-200 animate-pulse rounded-lg" />
+});
 
 interface Project {
   projectName: string;
@@ -114,33 +121,33 @@ export default function CityProjectsPage() {
       const response = await fetch(`http://localhost:5001/api/scraper/projects?${params}`);
       const result = await response.json();
       
-      if (result.success) {
-        const apiProjects = result.data.projects.map((project: any) => ({
+      if (result.success && result.data) {
+        const apiProjects = result.data.map((project: any) => ({
           projectName: project.projectName,
           promoterName: project.promoterName,
           projectType: project.projectType,
-          locality: project.locality || getRandomLocality(capitalizedCity),
+          locality: project.locality || '',
           reraId: project.reraId,
           approvedOn: project.approvedOn,
           bookingPercentage: project.bookingPercentage,
           price: project.price || 'Price on request',
-          totalUnits: project.totalUnits || Math.floor(Math.random() * 300) + 50,
-          availableUnits: project.availableUnits || Math.floor(Math.random() * 100) + 10,
-          priceRange: getPriceRangeFromPrice(project.price || '50L'),
-          amenities: ['Swimming Pool', 'Gym', 'Club House', 'Garden'].filter(() => Math.random() > 0.5)
+          totalUnits: project.totalUnits || 0,
+          availableUnits: project.availableUnits || 0,
+          priceRange: getPriceRangeFromPrice(project.price || '₹50L'),
+          amenities: project.amenities || []
         }));
 
         // Set pagination info
-        setCurrentPage(result.data.pagination.currentPage);
-        setTotalPages(result.data.pagination.totalPages);
-        setTotalProjects(result.data.pagination.totalProjects);
+        setCurrentPage(result.page || page);
+        setTotalPages(result.totalPages || 1);
+        setTotalProjects(result.totalCount || 0);
         
         // Calculate city stats (only once on first load)
         if (page === 1 || !cityStats) {
           const cityStats: CityStats = {
-            totalProjects: result.data.pagination.totalProjects,
-            residentialProjects: Math.floor(result.data.pagination.totalProjects * 0.7), // Estimate
-            commercialProjects: Math.floor(result.data.pagination.totalProjects * 0.2), // Estimate
+            totalProjects: result.totalCount || 0,
+            residentialProjects: Math.floor((result.totalCount || 0) * 0.7), // Estimate
+            commercialProjects: Math.floor((result.totalCount || 0) * 0.2), // Estimate
             avgBookingRate: Math.round(apiProjects.reduce((acc, p) => acc + p.bookingPercentage, 0) / apiProjects.length) || 75,
             totalUnits: apiProjects.reduce((acc, p) => acc + p.totalUnits, 0),
             topLocalities: [...new Set(apiProjects.map(p => p.locality))].slice(0, 5),
@@ -160,23 +167,16 @@ export default function CityProjectsPage() {
       }
     } catch (error) {
       console.error('Error fetching city data:', error);
-      // Fallback to mock data only if no data at all
-      if (projects.length === 0) {
-        const mockProjects: Project[] = generateMockProjects(cityName);
-        setProjects(mockProjects);
-        setFilteredProjects(mockProjects);
-        setTotalProjects(mockProjects.length);
-        setTotalPages(1);
-      }
+      // No fallback - only use real data
+      setProjects([]);
+      setFilteredProjects([]);
+      setTotalProjects(0);
+      setTotalPages(0);
     } finally {
       setLoading(false);
     }
   };
 
-  const getRandomLocality = (city: string): string => {
-    const localities = getLocalitiesForCity(city);
-    return localities[Math.floor(Math.random() * localities.length)];
-  };
 
   const getPriceRangeFromPrice = (price: string): string => {
     // Extract numeric value from price string like "₹45-85L"
@@ -190,26 +190,6 @@ export default function CityProjectsPage() {
     return '200L+';
   };
 
-  const generateMockProjects = (city: string): Project[] => {
-    const localities = getLocalitiesForCity(city);
-    const developers = ['Adani Realty', 'Ganesh Housing', 'Savvy Group', 'Shivalik Group', 'Goyal & Co', 'Sun Builders', 'Bakeri Group'];
-    const projectTypes = ['Residential', 'Commercial', 'Mixed Use', 'Township'];
-    
-    return Array.from({ length: 50 }, (_, i) => ({
-      projectName: `${developers[i % developers.length]} ${localities[i % localities.length]}`,
-      promoterName: developers[i % developers.length],
-      projectType: projectTypes[i % projectTypes.length],
-      locality: localities[i % localities.length],
-      reraId: `PR/GJ/${city.toUpperCase()}/2024/RAA${String(i + 1).padStart(5, '0')}`,
-      approvedOn: `${(i % 28) + 1}-${(i % 12) + 1}-${2023 + (i % 2)}`,
-      bookingPercentage: 30 + Math.floor(Math.random() * 70),
-      totalUnits: 50 + Math.floor(Math.random() * 450),
-      availableUnits: Math.floor(Math.random() * 100),
-      priceRange: ['₹25-50L', '₹50-100L', '₹100-200L', '₹200L+'][i % 4],
-      completionDate: `Q${(i % 4) + 1} ${2025 + (i % 3)}`,
-      area: 5000 + Math.floor(Math.random() * 45000)
-    }));
-  };
 
   const getLocalitiesForCity = (city: string): string[] => {
     const localityMap: Record<string, string[]> = {
@@ -559,16 +539,16 @@ export default function CityProjectsPage() {
             )}
 
             {viewMode === 'map' && (
-              <div className="bg-white rounded-lg shadow-md p-8">
-                <div className="h-96 bg-gray-200 rounded-lg flex items-center justify-center">
-                  <div className="text-center">
-                    <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                    </svg>
-                    <p className="text-gray-600 font-medium">Interactive Map View</p>
-                    <p className="text-sm text-gray-500 mt-2">Map integration coming soon</p>
-                    <p className="text-xs text-gray-400 mt-4">Will show project locations across {cityName}</p>
-                  </div>
+              <div className="bg-white rounded-lg shadow-md p-4">
+                <ProjectMap 
+                  projects={filteredProjects}
+                  center={cityName === 'Gandhinagar' ? [23.2156, 72.6369] : undefined}
+                  zoom={11}
+                />
+                <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <strong>Tip:</strong> Click on markers to see project details. Projects are positioned based on their locality or district.
+                  </p>
                 </div>
               </div>
             )}
