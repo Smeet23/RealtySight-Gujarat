@@ -9,14 +9,19 @@ interface Project {
   district: string;
   reraId: string;
   approvedOn: string;
-  bookingPercentage: number;
+  status?: string;
+  projectCost?: number;
 }
 
 interface RERAData {
   cityStats: Record<string, number>;
   recentProjects: Project[];
   totalProjects: number;
-  projects?: Project[];
+  ongoingProjects: number;
+  completedProjects: number;
+  newProjects: number;
+  topDevelopers?: Array<{ name: string; projectCount: number }>;
+  totalValue?: number;
 }
 
 export default function RERAProjects() {
@@ -29,7 +34,7 @@ export default function RERAProjects() {
 
   const fetchRERAData = async () => {
     try {
-      const response = await fetch('http://localhost:5001/api/scraper/data');
+      const response = await fetch('/api/rera/gujarat');
       const result = await response.json();
       
       if (result.success) {
@@ -37,7 +42,11 @@ export default function RERAProjects() {
           cityStats: result.cityStats || {},
           recentProjects: result.recentProjects || [],
           totalProjects: result.totalProjects || 0,
-          projects: result.projects || []
+          ongoingProjects: result.ongoingProjects || 0,
+          completedProjects: result.completedProjects || 0,
+          newProjects: result.newProjects || 0,
+          topDevelopers: result.topDevelopers || [],
+          totalValue: result.totalValue || 0
         });
       }
     } catch (error) {
@@ -55,9 +64,11 @@ export default function RERAProjects() {
     );
   }
 
-  if (!reraData) {
+  if (!reraData || reraData.totalProjects === 0) {
     return (
-      <div className="text-center text-gray-600">No data available</div>
+      <div className="text-center text-gray-600 py-8">
+        No data available.
+      </div>
     );
   }
 
@@ -68,16 +79,16 @@ export default function RERAProjects() {
         <h2 className="text-2xl font-bold mb-4">Gujarat RERA Statistics</h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
-            <div className="text-3xl font-bold">{reraData.totalProjects?.toLocaleString() || '16,027'}</div>
+            <div className="text-3xl font-bold">{reraData.totalProjects?.toLocaleString()}</div>
             <div className="text-purple-200">Total Projects</div>
           </div>
           <div>
-            <div className="text-3xl font-bold">{Math.floor(reraData.totalProjects * 0.31).toLocaleString()}</div>
-            <div className="text-purple-200">Registered Projects</div>
+            <div className="text-3xl font-bold">{reraData.ongoingProjects?.toLocaleString()}</div>
+            <div className="text-purple-200">Ongoing Projects</div>
           </div>
           <div>
-            <div className="text-3xl font-bold">78.5%</div>
-            <div className="text-purple-200">Avg Booking Rate</div>
+            <div className="text-3xl font-bold">{reraData.completedProjects?.toLocaleString()}</div>
+            <div className="text-purple-200">Completed</div>
           </div>
           <div>
             <div className="text-3xl font-bold">{Object.keys(reraData.cityStats).length}</div>
@@ -126,7 +137,7 @@ export default function RERAProjects() {
                   District
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Booking %
+                  Type
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
@@ -141,48 +152,34 @@ export default function RERAProjects() {
                     <div className="text-xs text-gray-500">{project.reraId}</div>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm">
-                    <a 
-                      href={`/builder/${project.promoterName.toLowerCase().replace(/\s+/g, '-')}`}
-                      className="text-blue-600 hover:text-blue-800 hover:underline"
-                    >
-                      {project.promoterName}
-                    </a>
+                    {project.promoterName ? (
+                      <a 
+                        href={`/builder/${project.promoterName.toLowerCase().replace(/\s+/g, '-')}`}
+                        className="text-blue-600 hover:text-blue-800 hover:underline"
+                      >
+                        {project.promoterName}
+                      </a>
+                    ) : (
+                      <span className="text-gray-500">N/A</span>
+                    )}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                     {project.district}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="w-full bg-gray-200 rounded-full h-2.5 mr-2">
-                        <div
-                          className={`h-2.5 rounded-full ${
-                            project.bookingPercentage >= 80
-                              ? 'bg-green-600'
-                              : project.bookingPercentage >= 50
-                              ? 'bg-yellow-600'
-                              : 'bg-red-600'
-                          }`}
-                          style={{ width: `${project.bookingPercentage}%` }}
-                        ></div>
-                      </div>
-                      <span className="text-sm font-medium">{project.bookingPercentage}%</span>
-                    </div>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {project.projectType || 'N/A'}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
                     <span
                       className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        project.bookingPercentage === 100
+                        project.status?.toLowerCase() === 'completed'
                           ? 'bg-gray-100 text-gray-800'
-                          : project.bookingPercentage >= 80
+                          : project.status?.toLowerCase() === 'ongoing'
                           ? 'bg-green-100 text-green-800'
                           : 'bg-blue-100 text-blue-800'
                       }`}
                     >
-                      {project.bookingPercentage === 100
-                        ? 'Sold Out'
-                        : project.bookingPercentage >= 80
-                        ? 'High Demand'
-                        : 'Available'}
+                      {project.status || 'Active'}
                     </span>
                   </td>
                 </tr>
@@ -193,24 +190,29 @@ export default function RERAProjects() {
       </div>
 
       {/* Top Developers */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-xl font-bold mb-4">Top Developers in Gujarat</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {['Adani Realty', 'Ganesh Housing', 'Savvy Group', 'Shivalik Group', 'Goyal & Co'].map((developer: string, index: number) => (
-            <a 
-              key={index} 
-              href={`/builder/${developer.toLowerCase().replace(/\s+/g, '-')}`}
-              className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition cursor-pointer"
-            >
-              <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
-                {index + 1}
-              </div>
-              <div className="font-medium text-gray-900">{developer}</div>
-              <div className="ml-auto text-blue-600 text-sm">→</div>
-            </a>
-          ))}
+      {reraData.topDevelopers && reraData.topDevelopers.length > 0 && (
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h3 className="text-xl font-bold mb-4">Top Developers in Gujarat</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {reraData.topDevelopers.slice(0, 6).map((developer, index) => (
+              <a 
+                key={index} 
+                href={`/builder/${developer.name?.toLowerCase().replace(/\s+/g, '-') || '#'}`}
+                className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition cursor-pointer"
+              >
+                <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
+                  {index + 1}
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium text-gray-900">{developer.name}</div>
+                  <div className="text-xs text-gray-500">{developer.projectCount} projects</div>
+                </div>
+                <div className="text-blue-600 text-sm">→</div>
+              </a>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -25,6 +25,21 @@ services:
     networks:
       - grea-network
 
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: grea-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@rera.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - grea-network
+
   backend:
     build:
       context: ./backend
@@ -75,3 +90,4 @@ networks:
 volumes:
   postgres-data:
   redis-data:
+  pgadmin-data:

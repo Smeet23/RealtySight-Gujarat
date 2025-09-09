@@ -1,0 +1,132 @@
+RERA Data Fetcher - Using CURL
+
+This will fetch real project data from Gujarat RERA portal
+and store it in your PostgreSQL database.
+
+Starting RERA data import using curl...
+
+Fetching data for Ahmedabad...
+Fetching URL: https://gujrera.gujarat.gov.in/dashboard/get-district-wise-projectlist/0/0/all/Ahmedabad/all
+Found 5004 projects for Ahmedabad
+Successfully imported 5004 projects from Ahmedabad
+
+Fetching data for Surat...
+Fetching URL: https://gujrera.gujarat.gov.in/dashboard/get-district-wise-projectlist/0/0/all/Surat/all
+Found 2298 projects for Surat
+Successfully imported 2298 projects from Surat
+
+Fetching data for Vadodara...
+Fetching URL: https://gujrera.gujarat.gov.in/dashboard/get-district-wise-projectlist/0/0/all/Vadodara/all
+Found 2734 projects for Vadodara
+Successfully imported 2734 projects from Vadodara
+
+Fetching data for Rajkot...
+Fetching URL: https://gujrera.gujarat.gov.in/dashboard/get-district-wise-projectlist/0/0/all/Rajkot/all
+Found 1901 projects for Rajkot
+Successfully imported 1901 projects from Rajkot
+
+Fetching data for Gandhinagar...
+Fetching URL: https://gujrera.gujarat.gov.in/dashboard/get-district-wise-projectlist/0/0/all/Gandhinagar/all
+Found 1514 projects for Gandhinagar
+Successfully imported 1514 projects from Gandhinagar
+
+Fetching data for Bhavnagar...
+Fetching URL: https://gujrera.gujarat.gov.in/dashboard/get-district-wise-projectlist/0/0/all/Bhavnagar/all
+Found 632 projects for Bhavnagar
+Successfully imported 632 projects from Bhavnagar
+
+Fetching data for Jamnagar...
+Fetching URL: https://gujrera.gujarat.gov.in/dashboard/get-district-wise-projectlist/0/0/all/Jamnagar/all
+Found 207 projects for Jamnagar
+Successfully imported 207 projects from Jamnagar
+
+Fetching data for Junagadh...
+Fetching URL: https://gujrera.gujarat.gov.in/dashboard/get-district-wise-projectlist/0/0/all/Junagadh/all
+Found 223 projects for Junagadh
+Successfully imported 223 projects from Junagadh
+
+Fetching data for Anand...
+Fetching URL: https://gujrera.gujarat.gov.in/dashboard/get-district-wise-projectlist/0/0/all/Anand/all
+No projects found for Anand
+
+Fetching data for Navsari...
+Fetching URL: https://gujrera.gujarat.gov.in/dashboard/get-district-wise-projectlist/0/0/all/Navsari/all
+No projects found for Navsari
+
+Fetching data for Morbi...
+Fetching URL: https://gujrera.gujarat.gov.in/dashboard/get-district-wise-projectlist/0/0/all/Morbi/all
+No projects found for Morbi
+
+Fetching data for Mehsana...
+Fetching URL: https://gujrera.gujarat.gov.in/dashboard/get-district-wise-projectlist/0/0/all/Mehsana/all
+No projects found for Mehsana
+
+Fetching data for Bharuch...
+Fetching URL: https://gujrera.gujarat.gov.in/dashboard/get-district-wise-projectlist/0/0/all/Bharuch/all
+No projects found for Bharuch
+
+Fetching data for Porbandar...
+Fetching URL: https://gujrera.gujarat.gov.in/dashboard/get-district-wise-projectlist/0/0/all/Porbandar/all
+No projects found for Porbandar
+
+Fetching data for Valsad...
+Fetching URL: https://gujrera.gujarat.gov.in/dashboard/get-district-wise-projectlist/0/0/all/Valsad/all
+No projects found for Valsad
+
+Fetching data for Vapi...
+Fetching URL: https://gujrera.gujarat.gov.in/dashboard/get-district-wise-projectlist/0/0/all/Vapi/all
+No projects found for Vapi
+
+Fetching data for Veraval...
+Fetching URL: https://gujrera.gujarat.gov.in/dashboard/get-district-wise-projectlist/0/0/all/Veraval/all
+No projects found for Veraval
+
+Fetching data for Palanpur...
+Fetching URL: https://gujrera.gujarat.gov.in/dashboard/get-district-wise-projectlist/0/0/all/Palanpur/all
+No projects found for Palanpur
+
+Fetching data for Patan...
+Fetching URL: https://gujrera.gujarat.gov.in/dashboard/get-district-wise-projectlist/0/0/all/Patan/all
+No projects found for Patan
+
+Fetching data for Botad...
+Fetching URL: https://gujrera.gujarat.gov.in/dashboard/get-district-wise-projectlist/0/0/all/Botad/all
+No projects found for Botad
+
+
+==================================================
+=== Import Complete ===
+==================================================
+Total projects imported: 14513
+Successful cities: 8/20
+
+Projects per city:
+  Ahmedabad: 5004 projects
+  Surat: 2298 projects
+  Vadodara: 2734 projects
+  Rajkot: 1901 projects
+  Gandhinagar: 1514 projects
+  Bhavnagar: 632 projects
+  Jamnagar: 207 projects
+  Junagadh: 223 projects
+
+=== Database Statistics ===
+Total Projects: 14513
+Cities: 12
+Project Types: 4
+Project Statuses: 3
+Earliest Project: Thu Mar 31 2005 00:00:00 GMT+0530 (India Standard Time)
+Latest Completion: Sun Jun 29 2036 00:00:00 GMT+0530 (India Standard Time)
+
+Projects by Type:
+  Residential: 6623
+  Mixed: 4993
+  Commercial: 2045
+  Plotted: 852
+
+Projects by Status:
+  New: 11327
+  Ongoing: 3144
+  Completed: 42
+
+Script completed successfully!

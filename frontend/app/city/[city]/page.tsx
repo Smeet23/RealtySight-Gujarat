@@ -3,42 +3,36 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
-
-// Dynamically import map to avoid SSR issues
-const ProjectMap = dynamic(() => import('@/components/ProjectMap'), {
-  ssr: false,
-  loading: () => <div className="h-96 bg-gray-200 animate-pulse rounded-lg" />
-});
+import UnderConstruction from '@/components/UnderConstruction';
 
 interface Project {
-  projectName: string;
-  promoterName: string;
-  projectType: string;
-  locality: string;
-  reraId: string;
-  approvedOn: string;
-  bookingPercentage: number;
-  totalUnits: number;
-  availableUnits: number;
-  priceRange: string;
+  id: number;
+  name: string;
+  developer: string;
+  type: string;
+  status: string;
+  location: string;
+  city: string;
+  registrationNo: string;
+  approvedDate: string;
+  startDate: string;
   completionDate: string;
-  area: number;
+  projectCost: number;
+  contact: {
+    email: string;
+    phone: string;
+  };
 }
 
 interface CityStats {
-  totalProjects: number;
-  residentialProjects: number;
-  commercialProjects: number;
-  avgBookingRate: number;
-  totalUnits: number;
-  topLocalities: string[];
-  priceRanges: {
-    budget: number;
-    mid: number;
-    premium: number;
-    luxury: number;
-  };
+  total: number;
+  ongoing: number;
+  completed: number;
+  new: number;
+  residential: number;
+  commercial: number;
+  mixed: number;
+  totalValue: number;
 }
 
 export default function CityProjectsPage() {
@@ -53,43 +47,23 @@ export default function CityProjectsPage() {
   const [totalProjects, setTotalProjects] = useState(0);
   
   // Filters
-  const [selectedLocality, setSelectedLocality] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
-  const [selectedBooking, setSelectedBooking] = useState('all');
-  const [selectedPrice, setSelectedPrice] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('bookingHigh');
-  const [allLocalities, setAllLocalities] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState('nameAZ');
 
   // View options
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'map'>('grid');
 
   useEffect(() => {
     fetchCityData(1);
-    // Fetch all localities for this city
-    // Capitalize first letter of city name for API
-    const capitalizedCity = cityName.charAt(0).toUpperCase() + cityName.slice(1);
-    fetch(`http://localhost:5001/api/scraper/localities?city=${capitalizedCity}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          setAllLocalities(data.data.localities.map((loc: any) => loc.name));
-        } else {
-          // Fallback to hardcoded localities if API fails
-          setAllLocalities(getLocalitiesForCity(capitalizedCity));
-        }
-      })
-      .catch(err => {
-        console.error('Error fetching localities:', err);
-        // Fallback to hardcoded localities
-        setAllLocalities(getLocalitiesForCity(capitalizedCity));
-      });
   }, [cityName]);
 
   useEffect(() => {
-    // When filters change, fetch data from backend with filters
-    fetchCityData(1);
-  }, [selectedLocality, selectedType, selectedBooking, selectedPrice, searchQuery, sortBy]);
+    // Apply filters to already fetched data
+    if (projects.length > 0) {
+      applyFilters(projects);
+    }
+  }, [selectedType, searchQuery, sortBy, projects]);
 
   const handlePageChange = (page: number) => {
     fetchCityData(page);
@@ -99,108 +73,88 @@ export default function CityProjectsPage() {
   const fetchCityData = async (page: number = 1) => {
     try {
       setLoading(true);
-      // Capitalize first letter of city name for API
-      const capitalizedCity = cityName.charAt(0).toUpperCase() + cityName.slice(1);
       
-      // Build query params with filters
-      const params = new URLSearchParams({
-        city: capitalizedCity,
-        page: page.toString(),
-        limit: '50'
-      });
+      // Fetch projects from our RERA API endpoint
+      const response = await fetch(`/api/rera/${cityName}`);
       
-      // Add filters to API call
-      if (selectedLocality !== 'all') {
-        params.append('locality', selectedLocality);
-      }
-      if (searchQuery) {
-        params.append('search', searchQuery);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch data: ${response.status}`);
       }
       
-      // Fetch projects with pagination and filters
-      const response = await fetch(`http://localhost:5001/api/scraper/projects?${params}`);
       const result = await response.json();
       
-      if (result.success && result.data) {
-        const apiProjects = result.data.map((project: any) => ({
-          projectName: project.projectName,
-          promoterName: project.promoterName,
-          projectType: project.projectType,
-          locality: project.locality || '',
-          reraId: project.reraId,
-          approvedOn: project.approvedOn,
-          bookingPercentage: project.bookingPercentage,
-          price: project.price || 'Price on request',
-          totalUnits: project.totalUnits || 0,
-          availableUnits: project.availableUnits || 0,
-          priceRange: getPriceRangeFromPrice(project.price || '₹50L'),
-          amenities: project.amenities || []
-        }));
-
-        // Set pagination info
-        setCurrentPage(result.page || page);
-        setTotalPages(result.totalPages || 1);
-        setTotalProjects(result.totalCount || 0);
+      if (result.success && result.projects) {
+        console.log(`Fetched ${result.projects.length} projects for ${cityName}`);
         
-        // Calculate city stats (only once on first load)
-        if (page === 1 || !cityStats) {
-          const cityStats: CityStats = {
-            totalProjects: result.totalCount || 0,
-            residentialProjects: Math.floor((result.totalCount || 0) * 0.7), // Estimate
-            commercialProjects: Math.floor((result.totalCount || 0) * 0.2), // Estimate
-            avgBookingRate: Math.round(apiProjects.reduce((acc, p) => acc + p.bookingPercentage, 0) / apiProjects.length) || 75,
-            totalUnits: apiProjects.reduce((acc, p) => acc + p.totalUnits, 0),
-            topLocalities: [...new Set(apiProjects.map(p => p.locality))].slice(0, 5),
-            priceRanges: {
-              budget: apiProjects.filter(p => p.priceRange.includes('25-50')).length,
-              mid: apiProjects.filter(p => p.priceRange.includes('50-100')).length,
-              premium: apiProjects.filter(p => p.priceRange.includes('100-200')).length,
-              luxury: apiProjects.filter(p => p.priceRange.includes('200+')).length,
-            }
-          };
-          setCityStats(cityStats);
+        const apiProjects = result.projects;
+
+        // Set pagination info (client-side pagination for now)
+        const itemsPerPage = 50;
+        const startIndex = (page - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        
+        setCurrentPage(page);
+        setTotalPages(Math.ceil(apiProjects.length / itemsPerPage));
+        setTotalProjects(result.totalCount || apiProjects.length);
+        
+        // Use stats from API
+        if (result.stats) {
+          setCityStats(result.stats);
         }
 
         setProjects(apiProjects);
-        // No need to set filteredProjects separately - projects are already filtered by backend
-        setFilteredProjects(apiProjects);
+        // Apply filters immediately
+        const paginatedProjects = apiProjects.slice(startIndex, endIndex);
+        applyFilters(paginatedProjects);
+      } else {
+        console.error('No projects in response:', result);
+        setProjects([]);
+        setFilteredProjects([]);
       }
     } catch (error) {
-      console.error('Error fetching city data:', error);
-      // No fallback - only use real data
+      console.error('Error fetching RERA data:', error);
+      // Show error message
       setProjects([]);
       setFilteredProjects([]);
       setTotalProjects(0);
       setTotalPages(0);
+      setCityStats(null);
     } finally {
       setLoading(false);
     }
   };
 
 
-  const getPriceRangeFromPrice = (price: string): string => {
-    // Extract numeric value from price string like "₹45-85L"
-    const numbers = price.match(/\d+/g);
-    if (!numbers) return '50-100L';
-    
-    const firstNum = parseInt(numbers[0]);
-    if (firstNum < 50) return '25-50L';
-    if (firstNum < 100) return '50-100L';
-    if (firstNum < 200) return '100-200L';
-    return '200L+';
+
+  const applyFilters = (projectsToFilter: Project[]) => {
+    let filtered = [...projectsToFilter];
+
+    // Search filter
+    if (searchQuery) {
+      filtered = filtered.filter(p => 
+        p.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.developer?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.location?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Type filter
+    if (selectedType !== 'all') {
+      filtered = filtered.filter(p => p.type?.includes(selectedType));
+    }
+
+
+    // Sort
+    if (sortBy === 'nameAZ') {
+      filtered.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortBy === 'nameZA') {
+      filtered.sort((a, b) => b.name.localeCompare(a.name));
+    }
+
+    setFilteredProjects(filtered);
   };
 
 
-  const getLocalitiesForCity = (city: string): string[] => {
-    const localityMap: Record<string, string[]> = {
-      'Ahmedabad': ['Satellite', 'Bodakdev', 'Vastrapur', 'Prahlad Nagar', 'SG Highway', 'Maninagar', 'Gota', 'Chandkheda', 'Bopal', 'Shela'],
-      'Surat': ['Adajan', 'Vesu', 'Althan', 'Citylight', 'Dumas', 'Piplod', 'Jahangirpura', 'Katargam', 'Pal', 'Palanpur'],
-      'Vadodara': ['Alkapuri', 'Gotri', 'Vasna', 'Makarpura', 'Manjalpur', 'Harni', 'Waghodia', 'Sama', 'Nizampura', 'Fatehgunj'],
-      'Rajkot': ['Kalawad Road', 'University Road', 'Raiya Road', 'Kothariya', 'Nana Mava', 'Madhapar', 'Mavdi', 'Gondal Road', 'Aji Dam', 'Sadhu Vaswani'],
-      'Gandhinagar': ['Sector 1', 'Sector 7', 'Sector 21', 'Kudasan', 'Sargasan', 'Raysan', 'Urjanagar', 'Infocity', 'GIFT City', 'Randesan']
-    };
-    return localityMap[city] || ['Area 1', 'Area 2', 'Area 3', 'Area 4', 'Area 5'];
-  };
 
   // Filtering is now done server-side via API
 
@@ -231,24 +185,24 @@ export default function CityProjectsPage() {
           <div className="container mx-auto px-4 py-6">
             <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900">{cityStats.totalProjects}</div>
+                <div className="text-2xl font-bold text-gray-900">{cityStats.total}</div>
                 <div className="text-sm text-gray-600">Total Projects</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{cityStats.avgBookingRate}%</div>
-                <div className="text-sm text-gray-600">Avg Booking</div>
+                <div className="text-2xl font-bold text-green-600">{cityStats.ongoing}</div>
+                <div className="text-sm text-gray-600">Ongoing</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{cityStats.totalUnits.toLocaleString()}</div>
-                <div className="text-sm text-gray-600">Total Units</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">{cityStats.residentialProjects}</div>
+                <div className="text-2xl font-bold text-blue-600">{cityStats.residential}</div>
                 <div className="text-sm text-gray-600">Residential</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">{cityStats.commercialProjects}</div>
+                <div className="text-2xl font-bold text-purple-600">{cityStats.commercial}</div>
                 <div className="text-sm text-gray-600">Commercial</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-orange-600">₹{(cityStats.totalValue / 10000000).toFixed(0)}Cr</div>
+                <div className="text-sm text-gray-600">Total Value</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-red-600">{filteredProjects.length}</div>
@@ -278,20 +232,6 @@ export default function CityProjectsPage() {
                 />
               </div>
 
-              {/* Locality Filter */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Locality</label>
-                <select
-                  value={selectedLocality}
-                  onChange={(e) => setSelectedLocality(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="all">All Localities</option>
-                  {allLocalities.map(locality => (
-                    <option key={locality} value={locality}>{locality}</option>
-                  ))}
-                </select>
-              </div>
 
               {/* Project Type */}
               <div className="mb-6">
@@ -309,37 +249,6 @@ export default function CityProjectsPage() {
                 </select>
               </div>
 
-              {/* Booking Percentage */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Booking Status</label>
-                <select
-                  value={selectedBooking}
-                  onChange={(e) => setSelectedBooking(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="all">Any Booking %</option>
-                  <option value="0-25">Low (0-25%)</option>
-                  <option value="25-50">Medium (25-50%)</option>
-                  <option value="50-75">Good (50-75%)</option>
-                  <option value="75-100">Excellent (75-100%)</option>
-                </select>
-              </div>
-
-              {/* Price Range */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
-                <select
-                  value={selectedPrice}
-                  onChange={(e) => setSelectedPrice(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="all">All Prices</option>
-                  <option value="₹25-50L">₹25-50 Lakhs</option>
-                  <option value="₹50-100L">₹50L-1 Crore</option>
-                  <option value="₹100-200L">₹1-2 Crore</option>
-                  <option value="₹200L+">₹2 Crore+</option>
-                </select>
-              </div>
 
               {/* Sort By */}
               <div className="mb-6">
@@ -349,10 +258,6 @@ export default function CityProjectsPage() {
                   onChange={(e) => setSortBy(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="bookingHigh">Booking % (High to Low)</option>
-                  <option value="bookingLow">Booking % (Low to High)</option>
-                  <option value="unitsHigh">Units (High to Low)</option>
-                  <option value="unitsLow">Units (Low to High)</option>
                   <option value="nameAZ">Name (A-Z)</option>
                   <option value="nameZA">Name (Z-A)</option>
                 </select>
@@ -360,10 +265,7 @@ export default function CityProjectsPage() {
 
               <button
                 onClick={() => {
-                  setSelectedLocality('all');
                   setSelectedType('all');
-                  setSelectedBooking('all');
-                  setSelectedPrice('all');
                   setSearchQuery('');
                 }}
                 className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
@@ -409,51 +311,37 @@ export default function CityProjectsPage() {
                   <div key={index} className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow p-6">
                     <div className="flex justify-between items-start mb-4">
                       <div>
-                        <h3 className="text-xl font-bold text-gray-900">{project.projectName}</h3>
-                        <p className="text-sm text-gray-600">{project.promoterName}</p>
-                        <p className="text-sm text-blue-600">{project.locality}</p>
+                        <h3 className="text-xl font-bold text-gray-900">{project.name}</h3>
+                        <p className="text-sm text-gray-600">{project.developer}</p>
+                        <p className="text-sm text-blue-600">{project.location}</p>
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl font-bold text-green-600">{project.bookingPercentage}%</div>
-                        <div className="text-xs text-gray-500">Booked</div>
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          project.status === 'Ongoing' ? 'bg-green-100 text-green-800' :
+                          project.status === 'New' ? 'bg-blue-100 text-blue-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {project.status}
+                        </span>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       <div>
                         <p className="text-xs text-gray-500">Type</p>
-                        <p className="text-sm font-medium">{project.projectType}</p>
+                        <p className="text-sm font-medium">{project.type}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-500">Price Range</p>
-                        <p className="text-sm font-medium text-blue-600">{project.priceRange}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Total Units</p>
-                        <p className="text-sm font-medium">{project.totalUnits}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Available</p>
-                        <p className="text-sm font-medium text-green-600">{project.availableUnits} units</p>
+                        <p className="text-xs text-gray-500">Project Value</p>
+                        <p className="text-sm font-medium text-blue-600">₹{(project.projectCost / 10000000).toFixed(1)}Cr</p>
                       </div>
                     </div>
 
-                    <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
-                      <div
-                        className={`h-2 rounded-full ${
-                          project.bookingPercentage >= 75 ? 'bg-green-600' :
-                          project.bookingPercentage >= 50 ? 'bg-yellow-600' :
-                          project.bookingPercentage >= 25 ? 'bg-orange-600' :
-                          'bg-red-600'
-                        }`}
-                        style={{ width: `${project.bookingPercentage}%` }}
-                      ></div>
-                    </div>
 
                     <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-500">Completion: {project.completionDate}</span>
+                      <span className="text-xs text-gray-500">Completion: {new Date(project.completionDate).toLocaleDateString()}</span>
                       <Link
-                        href={`/project/${encodeURIComponent(project.reraId)}`}
+                        href={`/project/${encodeURIComponent(project.registrationNo)}`}
                         className="text-sm text-blue-600 hover:text-blue-800 font-medium"
                       >
                         View Details →
@@ -473,19 +361,13 @@ export default function CityProjectsPage() {
                         Project Details
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Locality
+                        Location
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Type
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Units
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Booking
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Price
+                        Project Value
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Action
@@ -497,35 +379,16 @@ export default function CityProjectsPage() {
                       <tr key={index} className="hover:bg-gray-50">
                         <td className="px-4 py-4">
                           <div>
-                            <div className="text-sm font-medium text-gray-900">{project.projectName}</div>
-                            <div className="text-xs text-gray-500">{project.promoterName}</div>
+                            <div className="text-sm font-medium text-gray-900">{project.name}</div>
+                            <div className="text-xs text-gray-500">{project.developer}</div>
                           </div>
                         </td>
-                        <td className="px-4 py-4 text-sm text-gray-900">{project.locality}</td>
-                        <td className="px-4 py-4 text-sm text-gray-900">{project.projectType}</td>
-                        <td className="px-4 py-4 text-sm text-gray-900">
-                          <div>{project.totalUnits} total</div>
-                          <div className="text-xs text-green-600">{project.availableUnits} available</div>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="flex items-center">
-                            <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
-                              <div
-                                className={`h-2 rounded-full ${
-                                  project.bookingPercentage >= 75 ? 'bg-green-600' :
-                                  project.bookingPercentage >= 50 ? 'bg-yellow-600' :
-                                  'bg-red-600'
-                                }`}
-                                style={{ width: `${project.bookingPercentage}%` }}
-                              ></div>
-                            </div>
-                            <span className="text-sm font-medium">{project.bookingPercentage}%</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-4 text-sm text-blue-600 font-medium">{project.priceRange}</td>
+                        <td className="px-4 py-4 text-sm text-gray-900">{project.location}</td>
+                        <td className="px-4 py-4 text-sm text-gray-900">{project.type}</td>
+                        <td className="px-4 py-4 text-sm text-blue-600 font-medium">₹{(project.projectCost / 10000000).toFixed(1)}Cr</td>
                         <td className="px-4 py-4 text-sm">
                           <Link
-                            href={`/project/${encodeURIComponent(project.reraId)}`}
+                            href={`/project/${encodeURIComponent(project.registrationNo)}`}
                             className="text-blue-600 hover:text-blue-800"
                           >
                             View
@@ -539,18 +402,11 @@ export default function CityProjectsPage() {
             )}
 
             {viewMode === 'map' && (
-              <div className="bg-white rounded-lg shadow-md p-4">
-                <ProjectMap 
-                  projects={filteredProjects}
-                  center={cityName === 'Gandhinagar' ? [23.2156, 72.6369] : undefined}
-                  zoom={11}
-                />
-                <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-blue-800">
-                    <strong>Tip:</strong> Click on markers to see project details. Projects are positioned based on their locality or district.
-                  </p>
-                </div>
-              </div>
+              <UnderConstruction 
+                feature="Interactive Map View"
+                message="Map visualization for projects is being developed. Soon you'll be able to see all projects on an interactive map with filters and location-based search."
+                icon="🗺️"
+              />
             )}
 
             {filteredProjects.length === 0 && (
@@ -558,10 +414,7 @@ export default function CityProjectsPage() {
                 <p className="text-gray-500">No projects found matching your filters</p>
                 <button
                   onClick={() => {
-                    setSelectedLocality('all');
                     setSelectedType('all');
-                    setSelectedBooking('all');
-                    setSelectedPrice('all');
                     setSearchQuery('');
                   }}
                   className="mt-4 text-blue-600 hover:text-blue-800"

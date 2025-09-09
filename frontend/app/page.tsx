@@ -1,6 +1,7 @@
 "use client";
 
 import HeroSection from "@/components/HeroSection";
+import CityCards from "@/components/CityCards";
 import RERAProjects from "@/components/RERAProjects";
 
 export default function Home() {
@@ -9,7 +10,10 @@ export default function Home() {
     <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <HeroSection />
       <div className="container mx-auto px-4 py-8">
-        <RERAProjects />
+        <CityCards />
+        <div className="mt-12">
+          <RERAProjects />
+        </div>
       </div>
     </main>
   );
